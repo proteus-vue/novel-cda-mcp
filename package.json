@@ -1,0 +1,56 @@
+{
+  "name": "novel-cda-mcp",
+  "version": "0.2.0",
+  "description": "大禹（CDA 约束驱动创作法，口号「笼中跳舞」）· 小说工业化 MCP Server：五层约束 + L1/L2 分层判据 + P1 评审回流",
+  "keywords": [
+    "mcp",
+    "novel",
+    "writing",
+    "cda",
+    "约束驱动创作",
+    "大禹",
+    "笼中跳舞"
+  ],
+  "license": "MIT",
+  "author": "kags",
+  "type": "module",
+  "bin": {
+    "novel-cda-mcp": "dist/index.js"
+  },
+  "files": [
+    "dist/",
+    "src/*.yaml",
+    "src/*.md",
+    "docs/",
+    "README.md",
+    "CHANGELOG.md",
+    "LICENSE"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/proteus-vue/novel-cda-mcp.git"
+  },
+  "homepage": "https://github.com/proteus-vue/novel-cda-mcp#readme",
+  "bugs": "https://github.com/proteus-vue/novel-cda-mcp/issues",
+  "scripts": {
+    "build": "tsc",
+    "start": "node dist/index.js",
+    "test": "pnpm test:unit && node test/smoke.mjs",
+    "test:unit": "vitest run",
+    "prepare": "npm run build"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "^1.12.0",
+    "js-yaml": "^5.5.0",
+    "zod": "^3.25.0"
+  },
+  "devDependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "@types/node": "^22.0.0",
+    "typescript": "^5.5.0",
+    "vitest": "^5.1.1"
+  }
+}
