@@ -1,0 +1,8 @@
+node_modules/
+dist/
+.test-data/
+.review_cache/
+coverage/
+*.tgz
+*.log
+.DS_Store
