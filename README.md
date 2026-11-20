@@ -5,6 +5,8 @@
 [![node](https://img.shields.io/node/v/novel-cda-mcp)](https://nodejs.org/)
 [![license](https://img.shields.io/npm/l/novel-cda-mcp)](./LICENSE)
 
+**仓库**：[GitHub](https://github.com/proteus-vue/novel-cda-mcp) · [GitCode（国内镜像）](https://gitcode.com/proteus-vue/novel-cda-mcp)（`git@gitcode.com:proteus-vue/novel-cda-mcp.git`）
+
 > **名字由来**：取自中国神话「大禹治水」。洪水滔天，鲧用堵而败，大禹改**疏**——
 > 顺水性把它引入九条河道、划定九州、铸九鼎立规矩，终化水患为水利。
 > 这正是 CDA 的隐喻：AI 的创作力如洪水，**堵不如导**——先建笼子（立规矩、定边界），
