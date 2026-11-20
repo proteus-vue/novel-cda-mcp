@@ -1,0 +1,35 @@
+# 大禹 · 风格预设：硬科幻 —— 平台档案
+# 数据来源：公开投稿/签约资料整理，以各平台官方最新公告为准
+# 被 config.ts 的 getPlatform() 读取；未知平台回退通用档并标 _fallback
+version: "0.2.0-scifi.1"
+defaults:
+  must_avoid: [涉政影射, 伪科学当科学依据, 可复现危险技术手法, 美化违法或技术霸凌, 三观严重偏离, 技术万能无需监管, 涉黄低俗]
+platforms:
+  qidian:
+    name: 起点中文网·科幻
+    unsigned_traffic: 有
+    exclusive: 分成/买断可选
+    genres: [硬科幻, 太空歌剧, 未来世界, 时间旅行]
+    patience: 较高
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 1200, golden_finger: 3000, payoff: 5000}
+  zhihu:
+    name: 知乎盐选·科幻
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [硬科幻, 科学生态, 近未来, 技术伦理]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [3000, 5000]
+    golden_window: {conflict: 800, golden_finger: 2500, payoff: 4500}
+  custom:
+    name: 自定义平台（硬科幻通用档）
+    unsigned_traffic: 未提供公开标准，按硬科幻通用标准评审
+    exclusive: 签约前需自行确认
+    genres: []
+    patience: 未知
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 800, golden_finger: 2000, payoff: 4000}
+    _fallback_template: true

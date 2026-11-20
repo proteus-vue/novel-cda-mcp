@@ -206,3 +206,68 @@ describe("多风格 preset · CDA_CONFIG_DIR 整包切换", () => {
     expect(config.ruleConsistency()).toEqual([]);
   });
 });
+
+describe("多风格 preset · 硬科幻（hard-scifi）", () => {
+  const PRESET = path.resolve(__dirname, "../presets/hard-scifi");
+  const GUYAN = path.resolve(__dirname, "../presets/guyan-quanmou");
+
+  it("硬科幻 preset 存在且三件套齐全", () => {
+    for (const f of ["rules.yaml", "platforms.yaml", "prompts.md"]) {
+      expect(fs.existsSync(path.join(PRESET, f)), `缺 ${f}`).toBe(true);
+    }
+  });
+
+  it("加载后 display_name/版本切换，一致性通过，prompt key 齐全", async () => {
+    const { config } = await freshModules(PRESET);
+    expect(config.RULES.meta?.display_name).toBe("大禹·硬科幻");
+    expect(config.RULE_VERSION).toMatch(/scifi/);
+    expect(config.CONFIG_DIR).toBe(PRESET);
+    expect(config.ruleConsistency()).toEqual([]);
+    expect(Object.keys(config.PROMPTS).sort()).toEqual(
+      ["build_system_prompt", "chapter_review_prompt", "next_chapter_brief_prompt", "periodic_audit_prompt"]
+    );
+  });
+
+  it("硬科幻 preset 的 doctor 健康（fail=0）", async () => {
+    await freshModules(PRESET);
+    const { doctor } = await import("../src/doctor.js");
+    const report = doctor();
+    expect(report.summary.fail).toBe(0);
+    expect(report.summary.healthy).toBe(true);
+    expect(report.display_name).toBe("大禹·硬科幻");
+  });
+
+  it("行为差异：玄学词在硬科幻包下 fatal，默认/古言包下通过", async () => {
+    const mysticText = "他运转真气结成金丹，终于突破筑基期，意念移物不在话下。";
+    await freshModules();
+    const def = await import("../src/layers.js");
+    expect(def.hasHardReject(def.l1_check(mysticText))).toBe(false);
+    await freshModules(GUYAN);
+    const gy = await import("../src/layers.js");
+    expect(gy.hasHardReject(gy.l1_check(mysticText))).toBe(false);
+    await freshModules(PRESET);
+    const sf = await import("../src/layers.js");
+    const sfHits = sf.l1_check(mysticText);
+    expect(sf.hasHardReject(sfHits)).toBe(true);
+    expect(sfHits.map((h: { id: string }) => h.id)).toContain("xianxia_leak");
+  });
+
+  it("反向差异：阿拉伯数字数据在古言包命中，硬科幻包合法", async () => {
+    const dataText = "飞船长137.5米，推力2.4兆牛，轨道高度400公里，误差0.3%。";
+    await freshModules(GUYAN);
+    const gy = await import("../src/layers.js");
+    expect(gy.l1_check(dataText).map((h: { id: string }) => h.id)).toContain("arabic_numeral_leak");
+    await freshModules(PRESET);
+    const sf = await import("../src/layers.js");
+    expect(sf.l1_check(dataText).map((h: { id: string }) => h.id)).not.toContain("arabic_numeral_leak");
+    expect(sf.hasHardReject(sf.l1_check(dataText))).toBe(false);
+  });
+
+  it("两风格互不污染：硬科幻包后切回古言包仍是古言规则", async () => {
+    await freshModules(PRESET);
+    const { config } = await freshModules(GUYAN);
+    expect(config.RULES.meta?.display_name).toBe("大禹·古言权谋");
+    expect(config.RULE_VERSION).toMatch(/guyan/);
+    expect(config.ruleConsistency()).toEqual([]);
+  });
+});
