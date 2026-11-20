@@ -1,0 +1,247 @@
+# 大禹 · 风格预设：古言权谋（guyan-quanmou）
+# 用法：CDA_CONFIG_DIR=/绝对路径/presets/guyan-quanmou node dist/index.js
+# 整包替换 rules.yaml / platforms.yaml / prompts.md，改配置不改代码。
+# 设计原则同主包：形态判据优先、词表只扫可计算部分、弱信号只报 suspect、语义留 L3。
+version: "0.2.0-guyan.1"
+
+meta:
+  name: novel-cda-mcp
+  display_name: 大禹·古言权谋
+  slogan: 庙堂跳舞
+  stages: [positioning, locking, structure, execution, qa]
+  note: "不教 AI 怎么写古言，只告诉 AI 不能怎么写——克制、含蓄、权谋有代价。"
+
+# 平台档案：古言权谋常投平台（公开资料整理，以官方最新公告为准）
+platforms:
+  qidian:
+    name: 起点女生网·古代言情
+    unsigned_traffic: 有
+    exclusive: 分成/买断可选
+    genres: [古代言情, 权谋, 宫廷侯爵, 王朝兴衰]
+    patience: 较高
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 1200, golden_finger: 3000, payoff: 5000}
+  jinjiang:
+    name: 晋江文学城·古言权谋
+    unsigned_traffic: 有
+    exclusive: 签约制（年限长，签人不签书）
+    genres: [古言权谋, 宫廷, 女性成长, 强强]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 800, golden_finger: 2000, payoff: 4000}
+  custom:
+    name: 自定义平台（古言通用档）
+    unsigned_traffic: 未提供公开标准，按古言权谋通用标准评审
+    exclusive: 签约前需自行确认
+    genres: []
+    patience: 未知
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 800, golden_finger: 2000, payoff: 4000}
+    _fallback_template: true
+
+# ---------------- L1：形态/结构红线（毫秒级 fatal 短路，不调 LLM）----------------
+hard_reject:
+  # 通用 L1 基准判据（保留：doctor/selfcheck 的判据样本依赖它，且古言同样要求专业描写停在流程层）
+  - id: reproducible_command
+    pattern: '(?:\b(?:sudo|rm\s+-rf|chmod|chown|curl|wget|ssh|mysql|psql|UPDATE\s+\w+\s+SET|DELETE\s+FROM|DROP\s+TABLE|/etc/|/var/log/|/home/)\b)|(?:SELECT\s+.+\s+FROM\s+\w+)|(?:ALTER\s+TABLE)'
+    action: reject
+    level: fatal
+    hint: 技术/专业描写停在流程/结果层（古言中的机关、营造、军械同理，不写可复现细节）
+  # 古言风格专属判据（叠加）
+  - id: modern_word_leak
+    pattern: '(?:手机|微信|朋友圈|打车|外卖|快递|直播|点赞|转发|充电|充电宝|地铁|高铁|飞机|坦克|机枪|电脑|密码|账号|登录|在线| offline|OK|yyds|绝绝子|emo|内卷|躺平|破防|家人们|栓Q|CPU|PPT|KPI)'
+    action: reject
+    level: fatal
+    hint: 古言正文出现现代/网络词——用同时代物件与说法替换（驿马/书信/帖子/车驾）
+  - id: internal_marker_leak
+    pattern: '【本章标注】|【新埋伏笔|【回收伏笔|新埋 [LCF]\d|回收 [LCF]\d'
+    action: reject
+    level: fatal
+    hint: 发布正文严禁内部标注块/伏笔编号泄漏——编号只存在台账，不进正文
+  - id: arabic_numeral_leak
+    pattern: '(?<![A-Za-z])[0-9]{2,}(?![A-Za-z])'
+    action: flag
+    level: serious
+    hint: 古言正文数字用汉字（三百两/二十二日）；阿拉伯数字仅允许在「硬数据台账」出现
+  - id: markdown_residue
+    pattern: '^\s*#{1,6}\s|\*\*[^*]+\*\*|^\s*```|^\s*>\s'
+    action: flag
+    level: serious
+    hint: 发布版为纯文本，去 Markdown 残留
+  - id: exclamation_in_title
+    pattern: '^.{0,20}[!！]'
+    action: reject
+    level: fatal
+    hint: 古言章名禁用感叹号（含蓄调性，靠信息差制造张力，不靠标点喊叫）
+  - id: real_dynasty_mirror
+    pattern: '《[^》]*(?:康熙|乾隆|雍正|朱元璋|刘邦|曹操|和珅|严嵩)[^》]*》'
+    action: flag
+    level: serious
+    hint: 用虚构朝代/年号，避开真实历史人物直接影射（方法论 06 号）
+
+# ---------------- L2：关键词/结构打分（百毫秒级）----------------
+classifier:
+  - id: ai_flavor
+    desc: AI 味红黄牌（古言版：通用红牌 + 古言腔跑偏信号）
+    level: minor
+    red_words: [仿佛, 似乎, 宛如, 在这一刻, 五味杂陈, 值得一提的是, 让我们, 某种意义上, 悄然, 不由得, 下意识地, 沉默了片刻, 意味深长, 百感交集, 莫名]
+    red_word_limit_per_chapter: 1
+    greasy_words: [狂妄一笑, 嘴角勾起, 勾起一抹, 嘴角扬起, 区区也配, 全场震惊, 气势如虹, 眼中杀意, 杀意凛然, 冷笑一声, 扬长而去]
+    patterns:
+      - {id: not_a_but_b, pattern: '不是.{1,24}而是', limit: 2}
+      - {id: this_is_x, pattern: '这[，,]就是', limit: 1}
+      - {id: dash_overuse, pattern: '——', limit: 3}
+      - {id: sublimation_end, pattern: '(?:或许|这)，?就是.{0,12}(?:代价|命运|成长)[^。！？」]*[。！？」]', limit: 1}
+  - id: guyan_register
+    desc: 古言语域跑偏（半文半白过头 / 现代口语 / 直白抒情）
+    level: serious
+    keywords: [横竖, 左右不过是, 咱家, 哥们, 搞定, 搞不定, 没辙, 慌了神, 傻眼, 懵了, 厉害了我的, 太绝了]
+    patterns:
+      - {id: direct_emotion, pattern: '她(?:很|非常|极其)(?:爱|恨|怕|伤心|高兴)', limit: 1}
+      - {id: modern_simile, pattern: '像(?:电脑|机器|程序|流水线|弹簧|电池)一样', limit: 0}
+  - id: compliance_soft
+    desc: 合规软信号（硬红线之外的提示，最终由 L3/人工判定）
+    level: serious
+    keywords: [法律拿他没办法, 逍遥法外, 努力无用, 底层永无出头之日, 皇权至上理所当然]
+  - id: weak_hook
+    desc: 章末套语（氛围收尾/格言总结）
+    level: minor
+    keywords: [他知道, 这一切才刚刚开始, 故事还在继续, 未完待续, 仿佛一切都]
+
+# ---------------- 反漂移（古言权谋：人设失智/恋爱脑/权谋无代价）----------------
+anti_drift:
+  persona_signals:
+    - {id: over_explaining, desc: 谋士长篇解释布局——克制型角色漂移, pattern: '(?:他|她)(?:解释道|说道).{60,}', level: mid}
+    - {id: emotional_outburst, desc: 当众失态/拍案——城府型角色漂移, pattern: '怒吼|拍案|拍桌子|大声吼道|失声痛哭', level: high}
+    - {id: love_brain, desc: 恋爱脑——权谋主线让位儿女情长, pattern: '为了(?:他|她).{0,8}(?:放弃|不管|毁了).{0,10}(?:计划|布局|大局|前程)', level: high}
+    - {id: cost_free_scheme, desc: 计谋无代价/无破绽——权谋失真, pattern: '毫无破绽|万无一失|没有任何代价|轻而易举就', level: high}
+    - {id: deus_ex_gear, desc: 天降救兵/巧合解围——权谋靠运气, pattern: '恰好路过|正好赶到|突然出现一队|天无绝人之路', level: mid}
+    - {id: address_mix, desc: 称谓变体（老X/小X）——是否混用同一人交给 L3, pattern: '老[\u4e00-\u9fa5]{1,2}|小[\u4e00-\u9fa5]{1,2}', level: low}
+  callbacks:
+    - type: "类型1 · 主角话变多了（城府向）"
+      keywords: [话多, 解释, 长篇解释, 嘴炮, 话变多]
+      symptom: 主角开始长篇解释布局
+      callback: 改成「留白章」：只写动作、眼神、物证与沉默，让读者自己拼出棋局。
+    - type: "类型2 · 恋爱脑（古言大忌）"
+      keywords: [恋爱脑, 为情弃局, 儿女情长, 不顾大局]
+      symptom: 感情线压过权谋主线
+      callback: 让感情在「对立立场」中推进——每次心动都伴随一次立场冲突，情感与利益二选一。
+    - type: "类型3 · 计谋太廉价"
+      keywords: [反派一碰就倒, 计谋廉价, 无抵抗, 赢得太容易, 万无一失]
+      symptom: 布局一路顺风，对手毫无反制
+      callback: 给对手「三条腿」（情报/朝堂势力/退路），让胜局付出可见代价（人脉/名声/亲族）。
+    - type: "类型4 · 现代腔泄漏"
+      keywords: [现代词, 出戏, 网络语, 现代口语]
+      symptom: 人物说话像现代人
+      callback: 把对白回炉：改称呼（在下/姑娘/大人）、改物件（书信/驿马）、改句式为短句留白。
+    - type: "类型5 · AI 味堆积"
+      keywords: [抽象情绪, ai味, AI味, 抽象, 总结升华]
+      symptom: 连续多章出现抽象情绪
+      callback: 用「对照样本」重写该章，强制物件/动作/数字/个体反应。
+    - type: "类型6 · 注水"
+      keywords: [注水, 凑字数, 无暗线, 废话多, 环境描写超]
+      symptom: 章节无推进，为凑字数写景物
+      callback: 砍到「卡点」为止，宁可短章；结束条件是信息差变化，不是字数达标。
+
+# ---------------- 单章内部自洽（确定性弱信号，只报 suspect，不判 fatal）----------------
+self_consistency:
+  enabled: true
+  time_anchor:
+    patterns: ['第[0-9一二三四五六七八九十百]+天', '第[0-9一二三四五六七八九十百]+章', '[0-9一二三四五六七八九十]{1,2}月[0-9一二三四五六七八九十]{1,3}[日号]', '[0-9一二三四五六七八九十]{1,2}[:：][0-9]{2}', '(?:永|景|建|元|天|嘉|泰|庆)[和|泰|熙|宁|祐|定]{1}[0-9一二三四五六七八九十]{1,3}年']
+    unordered_words: [突然想起, 回到, 回忆, 倒叙, 与此同时, 前一天, 三天前, 上个月]
+    max_backward_jumps: 1
+  numeric_conflict:
+    unit_pattern: '([0-9一二三四五六七八九十百千万两]+\.?[0-9]?)\s*(两|贯|钱|文|石|亩|里|丈|尺|寸|品|石|人|岁|月|年)'
+    contradiction_words: [但, 却, 然而, 反而, 其实, 结果]
+    window_chars: 60
+  entity_alias:
+    patterns: ['(?:老|小)[一-龥]{1,2}']
+    min_occurrences: 2
+
+# ---------------- 节奏信号（古言权谋：慢热，重布局与收网）----------------
+pacing_signals:
+  enabled: true
+  # 通用基准词（doctor 判据样本依赖）+ 古言专属词叠加
+  payoff_words: [成交, 拿下, 签下, 赚, 到手, 反杀, 打脸, 突破, 升级, 通过, 批准, 翻身, 回本, 兑现, 赢, 胜, 成功, 暗爽, 收网, 落子, 反将, 翻案, 揭穿, 摘下, 扳倒, 坐实, 洗清, 晋封, 掌权, 得手]
+  conflict_words: [冲突, 争吵, 对峙, 威胁, 逼迫, 拒绝, 反击, 竞争, 质疑, 挑衅, 危机, 危险, 失败, 损失, 亏, 廷争, 弹劾, 构陷, 下狱, 逼宫, 试探, 猜忌, 反噬, 败露, 失势]
+  hook_words: [没想到, 却不知, 谁料, 殊不知, 竟然, 居然, 突然, 究竟, 原来, 直到, 才发现, 这时, 下一步, 等着, 果然, 且看, 不出所料, 反手]
+  payoff_per_2000_warn: 0.3
+  conflict_per_1000_warn: 0.8
+  hook_per_1000_warn: 0.6
+
+# ---------------- 定位决策卡枚举（古言权谋版）----------------
+positioning_enums:
+  爽点类型: [布局收网, 智性博弈, 隐忍反击, 借力打力, 身份反转]
+  反派类型: [政敌, 制度, 亲族]
+  情感契约: [权谋, 相知, 守护, 意难平]
+
+# ---------------- 字数分层区间（古言慢热，浮动非死数）----------------
+# 必须保留「通用」键：init_project 的 tone 回退默认值
+word_bands:
+  通用: {静场: [1800, 2800], 常规: [2600, 3600], 反击: [3000, 4200], 高潮: [4000, 6000], 极短: [1000, 1800]}
+  权谋: {静场: [2000, 3000], 常规: [2800, 3800], 反击: [3200, 4500], 高潮: [4200, 6500], 极短: [1000, 1800]}
+  冷感: {静场: [2000, 3000], 常规: [2800, 3800], 反击: [3200, 4500], 高潮: [4200, 6500], 极短: [1000, 1800]}
+
+# ---------------- 发布闸门评分卡锚点（古言权谋权重）----------------
+rubric:
+  dimensions:
+    - {id: character, name: 人设/调性, weight: 0.30, max: 30}
+    - {id: structure, name: 权谋逻辑与收网, weight: 0.30, max: 30}
+    - {id: continuity, name: 连续与伏笔, weight: 0.20, max: 20}
+    - {id: writing, name: 古言语域与格式, weight: 0.20, max: 20}
+  grades: {A: 满分（无问题）, B: 轻微扣（1-2 处小问题）, C: 明显扣（多处/反复）, D: 严重扣（致命伤）}
+  score_map:
+    character: {A: 30, B: 24, C: 15, D: 0}
+    structure: {A: 30, B: 24, C: 15, D: 0}
+    continuity: {A: 20, B: 16, C: 10, D: 0}
+    writing: {A: 20, B: 16, C: 10, D: 0}
+  verdict: {pass: 80, revise: 70, fatal_overrides: true}
+  compliance_items:
+    - 无现代词/网络语泄漏（出戏即打回）
+    - 无真实朝代/历史人物直接影射
+    - 计谋有代价、对手有反制，非天降巧合
+    - 无恋爱脑压过权谋主线
+    - 无涉黄（露骨描写、擦边情节）
+    - 无暴力虐杀细节（写意化处理）
+    - 无违法教学（详细犯罪手法）
+    - 情绪底色有希望（无虚无主义/宣扬认命）
+
+# ---------------- 爽点密度 / 事件库轮换（古言权谋版）----------------
+cool_points:
+  - 每章 ≥1 处信息差变化（读者/角色认知被刷新，非打脸）
+  - 每 3 章 ≥1 次小收网（布局落地一角）
+  - 每卷 3-5 个名场面（殿前对质/当堂翻案/棋局摊牌）
+  - 每 10 章 1 个中转盘；每卷末 1 个大收网
+event_rotation:
+  - 四类事件库：A 构陷压迫 / B 布局反制 / C 身份翻转 / D 情感共鸣，各备 10 个
+  - 不连续两章用同一类
+  - A 后必跟 B（构陷→反制），反制须有代价
+  - D 每 6-9 章一次（古言慢热，情感调节频次低于爽文）
+  - C 用于「看似满盘皆输」的翻盘，须前文埋过伏笔
+
+# ---------------- 开新书 7 步 SOP（古言权谋版）----------------
+sop:
+  steps:
+    - {step: 1, name: 定位（1 天）, tool: init_project, checks: [朝代设定已虚拟, 权谋主线已定, 差异化一句话说得清, 情感契约已选]}
+    - {step: 2, name: 找对立面（0.5 天）★ 关键, tool: save_card(tone), checks: [每个维度都能说出我不是什么, 对照表覆盖语域/收网/情绪/章名/禁用词]}
+    - {step: 3, name: 建锁定层（1-2 天）, tool: save_card, checks: [人设禁止项可检查, 谋略边界清晰（不万能）, 对手三条腿各有边界, 硬数据表已建]}
+    - {step: 4, name: 建结构层（2-3 天）, tool: add_foreshadow/save_outline, checks: [权谋架构已定, 每章有信息差变化, 伏笔编号含埋设/回收章, 事件库 40+]}
+    - {step: 5, name: 建执行层（1 天）, tool: prompt build_system_prompt, checks: [prompt 含禁用现代词, 字数分层区间非死数, 古言专属词表, 半文半白尺度已定]}
+    - {step: 6, name: 建质检层（0.5 天）, tool: review_chapter/release_gate, checks: [评审分层, 有防恋爱脑检测项, 计谋代价已核, 漂移回调方案具体]}
+    - {step: 7, name: 小批量试产→评审→量产, tool: 试产10章+review_chapter, checks: [前 10 章已试产, 全审已跑, 问题已回调到规则层, 重跑确认稳定]}
+
+# ---------------- 事实抽取 / 评审回流（P1 闭环）----------------
+fact_extract:
+  enabled: true
+  unit_pattern: '([0-9一二三四五六七八九十百千万两]+\.?[0-9]?)\s*(两|贯|钱|文|石|亩|里|品|岁|月|年)'
+  label_chars: 8
+  min_occurrences: 2
+  max_anchors: 40
+chapter_brief:
+  enabled: true
+  max_avoid: 8
+  max_foreshadow: 8
+  overdue_chapters: 10

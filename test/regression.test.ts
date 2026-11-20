@@ -151,3 +151,58 @@ describe("doctor 全栈诊断", () => {
     expect(/[\u{1F300}-\u{1FAFF}]/u.test(text)).toBe(false);
   });
 });
+
+describe("多风格 preset · CDA_CONFIG_DIR 整包切换", () => {
+  const PRESET = path.resolve(__dirname, "../presets/guyan-quanmou");
+
+  it("古言 preset 存在且三件套齐全", () => {
+    for (const f of ["rules.yaml", "platforms.yaml", "prompts.md"]) {
+      expect(fs.existsSync(path.join(PRESET, f)), `缺 ${f}`).toBe(true);
+    }
+  });
+
+  it("加载 preset 后 display_name/版本切换，且规则一致性通过", async () => {
+    const { config } = await freshModules(PRESET);
+    expect(config.RULES.meta?.display_name).toBe("大禹·古言权谋");
+    expect(config.RULE_VERSION).toMatch(/guyan/);
+    expect(config.CONFIG_DIR).toBe(PRESET);
+    expect(config.ruleConsistency()).toEqual([]);
+    expect(Object.keys(config.PROMPTS).sort()).toEqual(
+      ["build_system_prompt", "chapter_review_prompt", "next_chapter_brief_prompt", "periodic_audit_prompt"]
+    );
+  });
+
+  it("古言 preset 的 doctor 健康（fail=0）", async () => {
+    await freshModules(PRESET);
+    const { doctor } = await import("../src/doctor.js");
+    const report = doctor();
+    expect(report.summary.fail).toBe(0);
+    expect(report.summary.healthy).toBe(true);
+    expect(report.display_name).toBe("大禹·古言权谋");
+  });
+
+  it("行为差异：现代词在古言包下 fatal，默认包下不 fatal", async () => {
+    const modernText = "他掏出手机看了眼微信，见有186条未读。";
+    // 默认包
+    await freshModules();
+    const def = await import("../src/layers.js");
+    const defFatal = def.hasHardReject(def.l1_check(modernText));
+    // 古言包
+    await freshModules(PRESET);
+    const gy = await import("../src/layers.js");
+    const gyHits = gy.l1_check(modernText);
+    const gyFatal = gy.hasHardReject(gyHits);
+    expect(defFatal).toBe(false);
+    expect(gyFatal).toBe(true);
+    expect(gyHits.map((h: { id: string }) => h.id)).toContain("modern_word_leak");
+    expect(gyHits.map((h: { id: string }) => h.id)).toContain("arabic_numeral_leak");
+  });
+
+  it("切回默认包后不被 preset 污染", async () => {
+    await freshModules(PRESET);
+    const { config } = await freshModules();
+    expect(config.RULES.meta?.display_name).toBe("大禹");
+    expect(config.RULE_VERSION).not.toMatch(/guyan/);
+    expect(config.ruleConsistency()).toEqual([]);
+  });
+});

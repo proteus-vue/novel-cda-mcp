@@ -191,6 +191,20 @@ pnpm test                           # 单测（vitest 11 项）+ 端到端冒烟
 
 **语言包整包切换**：设 `CDA_CONFIG_DIR=/path/to/my-pack`，目录内放同名 `rules.yaml` / `platforms.yaml` / `prompts.md` 即可整包替换规则/平台/提示词，不改代码。缺文件明确报错，**不会静默回退到默认规则**。
 
+## 多风格预设（preset）
+
+`CDA_CONFIG_DIR` 不只是"语言包"，它是**整包风格切换**——同一套 MCP 引擎，换一份配置就是另一种创作约束。仓库内置一个可运行的样例：[古言权谋 preset](./presets/guyan-quanmou/README.md)。
+
+```bash
+export CDA_CONFIG_DIR=/绝对路径/novel-cda-mcp/presets/guyan-quanmou
+node dist/index.js --doctor --json   # 显示 大禹·古言权谋 / 0.2.0-guyan.1 / healthy=true
+node dist/index.js                   # stdio 挂载，评审自动按古言规则
+```
+
+实测行为差异（同一段「手机/微信/186」文本）：默认包 `fatal=false` 通过，古言包 `fatal=true` 硬拒（命中 `modern_word_leak` + `arabic_numeral_leak`）。已固化为 5 个自动化断言，`pnpm test` 全绿。
+
+> **多风格的方法论**：重活儿不在"采集大量作品训练模型"（大禹无权重可训练），而在"把风格翻译成可计算判据 + 用小样本验收规则"——可计算的进 `rules.yaml`，扫不出的叙事声音进 `prompts.md` 交 L3 语义判。新增风格见 [preset README](./presets/guyan-quanmou/README.md#如何新增一个风格-preset)。
+
 ## 多语言边界（诚实说明）
 
 评审内容目前是中文网文规则。要评审其它语种，不需要改代码——另备一套同名配置文件（保持 stage key 与 JSON schema 一致），指向它即可。工具调用侧不限语言。
