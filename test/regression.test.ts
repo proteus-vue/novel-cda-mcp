@@ -271,3 +271,71 @@ describe("多风格 preset · 硬科幻（hard-scifi）", () => {
     expect(config.ruleConsistency()).toEqual([]);
   });
 });
+
+describe("多风格 preset · 轻喜剧（qing-xiju）", () => {
+  const PRESET = path.resolve(__dirname, "../presets/qing-xiju");
+  const GUYAN = path.resolve(__dirname, "../presets/guyan-quanmou");
+  const SCIFI = path.resolve(__dirname, "../presets/hard-scifi");
+
+  it("轻喜剧 preset 存在且三件套齐全", () => {
+    for (const f of ["rules.yaml", "platforms.yaml", "prompts.md"]) {
+      expect(fs.existsSync(path.join(PRESET, f)), `缺 ${f}`).toBe(true);
+    }
+  });
+
+  it("加载后 display_name/版本切换，一致性通过，prompt key 齐全", async () => {
+    const { config } = await freshModules(PRESET);
+    expect(config.RULES.meta?.display_name).toBe("大禹·轻喜剧");
+    expect(config.RULE_VERSION).toMatch(/xiju/);
+    expect(config.CONFIG_DIR).toBe(PRESET);
+    expect(config.ruleConsistency()).toEqual([]);
+    expect(Object.keys(config.PROMPTS).sort()).toEqual(
+      ["build_system_prompt", "chapter_review_prompt", "next_chapter_brief_prompt", "periodic_audit_prompt"]
+    );
+  });
+
+  it("轻喜剧 preset 的 doctor 健康（fail=0）", async () => {
+    await freshModules(PRESET);
+    const { doctor } = await import("../src/doctor.js");
+    const report = doctor();
+    expect(report.summary.fail).toBe(0);
+    expect(report.summary.healthy).toBe(true);
+    expect(report.display_name).toBe("大禹·轻喜剧");
+  });
+
+  it("苦情文本只在轻喜剧包 fatal，其余三包通过", async () => {
+    const sadText = "他吐血倒地，心如刀绞，她泪如雨下，两人就此生离死别。";
+    await freshModules();
+    const def = await import("../src/layers.js");
+    expect(def.hasHardReject(def.l1_check(sadText))).toBe(false);
+    await freshModules(GUYAN);
+    const gy = await import("../src/layers.js");
+    expect(gy.hasHardReject(gy.l1_check(sadText))).toBe(false);
+    await freshModules(SCIFI);
+    const sf = await import("../src/layers.js");
+    expect(sf.hasHardReject(sf.l1_check(sadText))).toBe(false);
+    await freshModules(PRESET);
+    const xj = await import("../src/layers.js");
+    const xjHits = xj.l1_check(sadText);
+    expect(xj.hasHardReject(xjHits)).toBe(true);
+    expect(xjHits.map((h: { id: string }) => h.id)).toContain("melodrama_leak");
+  });
+
+  it("网络口语在古言包 fatal、轻喜剧包合法", async () => {
+    const oralText = "他掏出手机看了眼微信，见有186条未读，直呼好家伙。";
+    await freshModules(GUYAN);
+    const gy = await import("../src/layers.js");
+    expect(gy.hasHardReject(gy.l1_check(oralText))).toBe(true);
+    await freshModules(PRESET);
+    const xj = await import("../src/layers.js");
+    expect(xj.hasHardReject(xj.l1_check(oralText))).toBe(false);
+  });
+
+  it("三风格互不污染：轻喜剧包后切回硬科幻包仍是硬科幻规则", async () => {
+    await freshModules(PRESET);
+    const { config } = await freshModules(SCIFI);
+    expect(config.RULES.meta?.display_name).toBe("大禹·硬科幻");
+    expect(config.RULE_VERSION).toMatch(/scifi/);
+    expect(config.ruleConsistency()).toEqual([]);
+  });
+});

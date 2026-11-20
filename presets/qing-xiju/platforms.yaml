@@ -1,0 +1,35 @@
+# 大禹 · 风格预设：轻喜剧 —— 平台档案
+# 数据来源：公开投稿/签约资料整理，以各平台官方最新公告为准
+# 被 config.ts 的 getPlatform() 读取；未知平台回退通用档并标 _fallback
+version: "0.2.0-xiju.1"
+defaults:
+  must_avoid: [涉政影射, 苦情虐心, 拿弱势群体或灾难开涮, 涉黄低俗, 美化违法或校园霸凌, 三观严重偏离, 强行煽情说教]
+platforms:
+  qidian:
+    name: 起点中文网·轻小说/搞笑
+    unsigned_traffic: 有
+    exclusive: 分成/买断可选
+    genres: [轻喜剧, 日常搞笑, 轻松向, 吐槽向]
+    patience: 较高
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 800, golden_finger: 2000, payoff: 3500}
+  fanqie:
+    name: 番茄小说·轻松搞笑
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [轻松搞笑, 沙雕, 日常, 都市轻喜]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 600, golden_finger: 1500, payoff: 3000}
+  custom:
+    name: 自定义平台（轻喜剧通用档）
+    unsigned_traffic: 未提供公开标准，按轻喜剧通用标准评审
+    exclusive: 签约前需自行确认
+    genres: []
+    patience: 未知
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 800, golden_finger: 2000, payoff: 3500}
+    _fallback_template: true
