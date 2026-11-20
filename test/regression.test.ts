@@ -339,3 +339,218 @@ describe("多风格 preset · 轻喜剧（qing-xiju）", () => {
     expect(config.ruleConsistency()).toEqual([]);
   });
 });
+
+describe("多风格 preset · 悬疑推理（xuanyi-tuili）", () => {
+  const PRESET = path.resolve(__dirname, "../presets/xuanyi-tuili");
+  const GUYAN = path.resolve(__dirname, "../presets/guyan-quanmou");
+  const SCIFI = path.resolve(__dirname, "../presets/hard-scifi");
+  const XIJU = path.resolve(__dirname, "../presets/qing-xiju");
+
+  it("悬疑 preset 存在且三件套齐全", () => {
+    for (const f of ["rules.yaml", "platforms.yaml", "prompts.md"]) {
+      expect(fs.existsSync(path.join(PRESET, f)), `缺 ${f}`).toBe(true);
+    }
+  });
+
+  it("加载后 display_name/版本切换，一致性通过，prompt key 齐全", async () => {
+    const { config } = await freshModules(PRESET);
+    expect(config.RULES.meta?.display_name).toBe("大禹·悬疑推理");
+    expect(config.RULE_VERSION).toMatch(/tuili/);
+    expect(config.CONFIG_DIR).toBe(PRESET);
+    expect(config.ruleConsistency()).toEqual([]);
+    expect(Object.keys(config.PROMPTS).sort()).toEqual(
+      ["build_system_prompt", "chapter_review_prompt", "next_chapter_brief_prompt", "periodic_audit_prompt"]
+    );
+  });
+
+  it("悬疑 preset 的 doctor 健康（fail=0）", async () => {
+    await freshModules(PRESET);
+    const { doctor } = await import("../src/doctor.js");
+    const report = doctor();
+    expect(report.summary.fail).toBe(0);
+    expect(report.summary.healthy).toBe(true);
+    expect(report.display_name).toBe("大禹·悬疑推理");
+  });
+
+  it("破案跳步文本只在悬疑包 fatal，其余四包通过", async () => {
+    const jumpText = "他轻而易举地破解了这起密室案件，很快抓住凶手。";
+    for (const cfg of [undefined, GUYAN, SCIFI, XIJU]) {
+      await freshModules(cfg);
+      const layers = await import("../src/layers.js");
+      expect(layers.hasHardReject(layers.l1_check(jumpText))).toBe(false);
+    }
+    await freshModules(PRESET);
+    const ty = await import("../src/layers.js");
+    const tyHits = ty.l1_check(jumpText);
+    expect(ty.hasHardReject(tyHits)).toBe(true);
+    expect(tyHits.map((h: { id: string }) => h.id)).toContain("skipped_deduction_leak");
+  });
+
+  it("超自然谜底文本只在悬疑包 fatal（硬科幻靠 xianxia_leak 另判）", async () => {
+    const ghostText = "凶手是鬼，原来是鬼魂作祟，超自然力量所为。";
+    for (const cfg of [undefined, GUYAN, SCIFI, XIJU]) {
+      await freshModules(cfg);
+      const layers = await import("../src/layers.js");
+      expect(layers.hasHardReject(layers.l1_check(ghostText))).toBe(false);
+    }
+    await freshModules(PRESET);
+    const ty = await import("../src/layers.js");
+    const tyHits = ty.l1_check(ghostText);
+    expect(ty.hasHardReject(tyHits)).toBe(true);
+    expect(tyHits.map((h: { id: string }) => h.id)).toContain("supernatural_solution_leak");
+  });
+
+  it("五风格互不污染：悬疑包后切回古言包仍是古言规则", async () => {
+    await freshModules(PRESET);
+    const { config } = await freshModules(GUYAN);
+    expect(config.RULES.meta?.display_name).toBe("大禹·古言权谋");
+    expect(config.RULE_VERSION).toMatch(/guyan/);
+    expect(config.ruleConsistency()).toEqual([]);
+  });
+});
+
+describe("多风格 preset · 历史正剧（lishi-zhengju）", () => {
+  const PRESET = path.resolve(__dirname, "../presets/lishi-zhengju");
+  const GUYAN = path.resolve(__dirname, "../presets/guyan-quanmou");
+  const XIJU = path.resolve(__dirname, "../presets/qing-xiju");
+
+  it("正剧 preset 存在且三件套齐全", () => {
+    for (const f of ["rules.yaml", "platforms.yaml", "prompts.md"]) {
+      expect(fs.existsSync(path.join(PRESET, f)), `缺 ${f}`).toBe(true);
+    }
+  });
+
+  it("加载后 display_name/版本切换，一致性通过，prompt key 齐全", async () => {
+    const { config } = await freshModules(PRESET);
+    expect(config.RULES.meta?.display_name).toBe("大禹·历史正剧");
+    expect(config.RULE_VERSION).toMatch(/zhengju/);
+    expect(config.CONFIG_DIR).toBe(PRESET);
+    expect(config.ruleConsistency()).toEqual([]);
+    expect(Object.keys(config.PROMPTS).sort()).toEqual(
+      ["build_system_prompt", "chapter_review_prompt", "next_chapter_brief_prompt", "periodic_audit_prompt"]
+    );
+  });
+
+  it("正剧 preset 的 doctor 健康（fail=0）", async () => {
+    await freshModules(PRESET);
+    const { doctor } = await import("../src/doctor.js");
+    const report = doctor();
+    expect(report.summary.fail).toBe(0);
+    expect(report.summary.healthy).toBe(true);
+    expect(report.display_name).toBe("大禹·历史正剧");
+  });
+
+  it("网络流行语只在正剧包 fatal（轻喜剧包合法且鼓励——反向差异）", async () => {
+    const slangText = "家人们，破防了，这波yyds，绝绝子，真的栓Q！";
+    // 轻喜剧包：合法
+    await freshModules(XIJU);
+    const xj = await import("../src/layers.js");
+    expect(xj.hasHardReject(xj.l1_check(slangText))).toBe(false);
+    // 正剧包：fatal
+    await freshModules(PRESET);
+    const zj = await import("../src/layers.js");
+    const zjHits = zj.l1_check(slangText);
+    expect(zj.hasHardReject(zjHits)).toBe(true);
+    expect(zjHits.map((h: { id: string }) => h.id)).toContain("internet_slang_leak");
+  });
+
+  it("系统流文本只在正剧包 fatal（去掉感叹号，避免古言 exclamation 误伤）", async () => {
+    const sysText = "叮，恭喜宿主，系统绑定成功，属性面板已开启。";
+    for (const cfg of [undefined, GUYAN, XIJU]) {
+      await freshModules(cfg);
+      const layers = await import("../src/layers.js");
+      expect(layers.hasHardReject(layers.l1_check(sysText))).toBe(false);
+    }
+    await freshModules(PRESET);
+    const zj = await import("../src/layers.js");
+    const zjHits = zj.l1_check(sysText);
+    expect(zj.hasHardReject(zjHits)).toBe(true);
+    expect(zjHits.map((h: { id: string }) => h.id)).toContain("system_panel_leak");
+  });
+
+  it("六风格互不污染：正剧包后切回轻喜剧包仍是轻喜剧规则", async () => {
+    await freshModules(PRESET);
+    const { config } = await freshModules(XIJU);
+    expect(config.RULES.meta?.display_name).toBe("大禹·轻喜剧");
+    expect(config.RULE_VERSION).toMatch(/xiju/);
+    expect(config.ruleConsistency()).toEqual([]);
+  });
+});
+
+describe("多风格 preset · 甜宠言情（tianchong）", () => {
+  const PRESET = path.resolve(__dirname, "../presets/tianchong");
+  const GUYAN = path.resolve(__dirname, "../presets/guyan-quanmou");
+  const XIJU = path.resolve(__dirname, "../presets/qing-xiju");
+
+  it("甜宠 preset 存在且三件套齐全", () => {
+    for (const f of ["rules.yaml", "platforms.yaml", "prompts.md"]) {
+      expect(fs.existsSync(path.join(PRESET, f)), `缺 ${f}`).toBe(true);
+    }
+  });
+
+  it("加载后 display_name/版本切换，一致性通过，prompt key 齐全", async () => {
+    const { config } = await freshModules(PRESET);
+    expect(config.RULES.meta?.display_name).toBe("大禹·甜宠言情");
+    expect(config.RULE_VERSION).toMatch(/tianchong/);
+    expect(config.CONFIG_DIR).toBe(PRESET);
+    expect(config.ruleConsistency()).toEqual([]);
+    expect(Object.keys(config.PROMPTS).sort()).toEqual(
+      ["build_system_prompt", "chapter_review_prompt", "next_chapter_brief_prompt", "periodic_audit_prompt"]
+    );
+  });
+
+  it("甜宠 preset 的 doctor 健康（fail=0）", async () => {
+    await freshModules(PRESET);
+    const { doctor } = await import("../src/doctor.js");
+    const report = doctor();
+    expect(report.summary.fail).toBe(0);
+    expect(report.summary.healthy).toBe(true);
+    expect(report.display_name).toBe("大禹·甜宠言情");
+  });
+
+  it("强制爱文本只在甜宠包 fatal，其余六包通过", async () => {
+    const forceText = "他给她下药，然后强行占有她。";
+    for (const cfg of [undefined, GUYAN, XIJU]) {
+      await freshModules(cfg);
+      const layers = await import("../src/layers.js");
+      expect(layers.hasHardReject(layers.l1_check(forceText))).toBe(false);
+    }
+    await freshModules(PRESET);
+    const tc = await import("../src/layers.js");
+    const tcHits = tc.l1_check(forceText);
+    expect(tc.hasHardReject(tcHits)).toBe(true);
+    expect(tcHits.map((h: { id: string }) => h.id)).toContain("forced_love_leak");
+  });
+
+  it("BE 结局文本只在甜宠包 fatal", async () => {
+    const beText = "他们终究没能在一起，孤独终老，相忘于江湖。";
+    for (const cfg of [undefined, GUYAN, XIJU]) {
+      await freshModules(cfg);
+      const layers = await import("../src/layers.js");
+      expect(layers.hasHardReject(layers.l1_check(beText))).toBe(false);
+    }
+    await freshModules(PRESET);
+    const tc = await import("../src/layers.js");
+    const tcHits = tc.l1_check(beText);
+    expect(tc.hasHardReject(tcHits)).toBe(true);
+    expect(tcHits.map((h: { id: string }) => h.id)).toContain("bad_ending_leak");
+  });
+
+  it("同类轻松向分野：苦情文本在轻喜剧 L1 fatal、甜宠仅 L2（非 fatal）", async () => {
+    const sadText = "他吐血倒地，心如刀绞，两人就此生离死别。";
+    await freshModules(XIJU);
+    const xj = await import("../src/layers.js");
+    expect(xj.hasHardReject(xj.l1_check(sadText))).toBe(true); // 轻喜剧：fatal
+    await freshModules(PRESET);
+    const tc = await import("../src/layers.js");
+    expect(tc.hasHardReject(tc.l1_check(sadText))).toBe(false); // 甜宠：苦情是 L2 软信号，非 L1 红线
+  });
+
+  it("七风格互不污染：甜宠包后切回古言包仍是古言规则", async () => {
+    await freshModules(PRESET);
+    const { config } = await freshModules(GUYAN);
+    expect(config.RULES.meta?.display_name).toBe("大禹·古言权谋");
+    expect(config.RULE_VERSION).toMatch(/guyan/);
+    expect(config.ruleConsistency()).toEqual([]);
+  });
+});

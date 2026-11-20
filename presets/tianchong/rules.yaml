@@ -1,0 +1,240 @@
+# 大禹 · 风格预设：甜宠言情（tianchong）
+# 用法：CDA_CONFIG_DIR=/绝对路径/presets/tianchong node dist/index.js
+# 整包替换 rules.yaml / platforms.yaml / prompts.md，改配置不改代码。
+# 甜宠核心：双向奔赴、甜度稳定、无强制无 BE；可计算的进规则，甜度与心动感交给 L3。
+version: "0.2.0-tianchong.1"
+
+meta:
+  name: novel-cda-mcp
+  display_name: 大禹·甜宠言情
+  slogan: 只许甜，不许虐
+  stages: [positioning, locking, structure, execution, qa]
+  note: "不教 AI 怎么写心动，只告诉 AI 什么会毁掉甜宠——强制爱、BE 结局、狗血误会、工具人女主。"
+
+# 平台档案：甜宠/言情常投平台（公开资料整理，以官方最新公告为准）
+platforms:
+  qidian:
+    name: 起点女生网·甜宠/言情
+    unsigned_traffic: 有
+    exclusive: 分成/买断可选
+    genres: [甜宠, 现代言情, 霸总, 暖宠]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 600, golden_finger: 1500, payoff: 2800}
+  fanqie:
+    name: 番茄小说·甜宠言情
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [甜宠, 言情, 先婚后爱, 破镜重圆]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 500, golden_finger: 1200, payoff: 2500}
+  custom:
+    name: 自定义平台（甜宠通用档）
+    unsigned_traffic: 未提供公开标准，按甜宠通用标准评审
+    exclusive: 签约前需自行确认
+    genres: []
+    patience: 未知
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 600, golden_finger: 1500, payoff: 2800}
+    _fallback_template: true
+
+# ---------------- L1：形态/结构红线（毫秒级 fatal 短路，不调 LLM）----------------
+hard_reject:
+  # 通用 L1 基准判据（保留：doctor/selfcheck 的判据样本依赖它）
+  - id: reproducible_command
+    pattern: '(?:\b(?:sudo|rm\s+-rf|chmod|chown|curl|wget|ssh|mysql|psql|UPDATE\s+\w+\s+SET|DELETE\s+FROM|DROP\s+TABLE|/etc/|/var/log/|/home/)\b)|(?:SELECT\s+.+\s+FROM\s+\w+)|(?:ALTER\s+TABLE)'
+    action: reject
+    level: fatal
+    hint: 专业描写停在流程/结果层，不写可复现命令/参数序列（言情同理）
+  - id: internal_marker_leak
+    pattern: '【本章标注】|【新埋伏笔|【回收伏笔|新埋 [LCF]\d|回收 [LCF]\d'
+    action: reject
+    level: fatal
+    hint: 发布正文严禁内部标注块/伏笔编号泄漏——编号只存在台账，不进正文
+  # 甜宠言情风格专属判据（叠加）
+  - id: forced_love_leak
+    pattern: '(?:下药|迷药|迷奸|强行(?:占有|发生关系|亲吻|搂抱)|绑(?:起来|住)(?:她|他)|(?:强迫|逼迫)(?:她|他)(?:发生|就范|屈服)|药物(?:迷倒|控制)|(?:掐|拽)(?:着)?(?:她|他)(?:的)?(?:下巴|手腕)[^。]{0,8}(?:强迫|逼迫))'
+    action: reject
+    level: fatal
+    hint: 甜宠正文禁强制爱/违背意愿的亲密行为——心动必须双向自愿，强制即毁契约
+  - id: bad_ending_leak
+    pattern: '(?:孤独终老|相忘于江湖|阴阳两隔|天人永隔|从此(?:再)?(?:也)?没有(?:见面|联系|重逢)|开放式结局|含泪(?:分手|离去|告别)|终究(?:错过|无缘|没能在一起)|(?:她|他)(?:嫁|娶)了别人|散落天涯)'
+    action: reject
+    level: fatal
+    hint: 甜宠必须给明确 HE——禁 BE/开放式/错失结局，读者要的是确定的幸福
+  - id: markdown_residue
+    pattern: '^\s*#{1,6}\s|\*\*[^*]+\*\*|^\s*```|^\s*>\s'
+    action: flag
+    level: serious
+    hint: 发布版为纯文本，去 Markdown 残留
+
+# ---------------- L2：关键词/结构打分（百毫秒级）----------------
+classifier:
+  - id: ai_flavor
+    desc: AI 味红黄牌（甜宠版：通用红牌 + 油腻情话信号）
+    level: minor
+    red_words: [仿佛, 似乎, 宛如, 在这一刻, 五味杂陈, 值得一提的是, 让我们, 某种意义上, 悄然, 不由得, 下意识地, 沉默了片刻, 意味深长, 百感交集, 莫名]
+    red_word_limit_per_chapter: 1
+    greasy_words: [狂妄一笑, 嘴角勾起, 勾起一抹, 嘴角扬起, 区区也配, 全场震惊, 气势如虹, 眼中杀意, 杀意凛然, 冷笑一声, 扬长而去]
+    patterns:
+      - {id: not_a_but_b, pattern: '不是.{1,24}而是', limit: 2}
+      - {id: this_is_x, pattern: '这[，,]就是', limit: 1}
+      - {id: dash_overuse, pattern: '——', limit: 3}
+      - {id: sublimation_end, pattern: '(?:或许|这)，?就是.{0,12}(?:代价|命运|成长)[^。！？」]*[。！？」]', limit: 1}
+  - id: melodrama_drift
+    desc: 虐心/狗血套路（甜宠要甜，虐点是毒）
+    level: serious
+    keywords: [误会三年, 恶毒女配, 白莲花, 当众悔婚, 车祸失忆, 抗癌治不好, 被迫分手, 哭了一整夜, 心如刀绞, 生离死别]
+    patterns:
+      - {id: forced_separation, pattern: '(?:为(?:了|了她|了他)好|不得已)(?:才)?(?:离开|分手|放手)', limit: 1}
+  - id: tool_character
+    desc: 工具人化（女主/男主沦为推进剧情的摆设，缺乏主动性）
+    level: minor
+    keywords: [她只是个, 他不过是个, 没有感情的, 随便哪个都行, 工具人, 背景板]
+  - id: compliance_soft
+    desc: 合规软信号（亲密描写尺度/价值观，最终由 L3/人工判定）
+    level: serious
+    keywords: [露骨描写, 擦边, 未成年恋爱亲密, 美化控制欲, 霸总强制, PUA, 拜金拜权]
+  - id: weak_hook
+    desc: 章末套语（氛围收尾/格言总结）
+    level: minor
+    keywords: [他知道, 这一切才刚刚开始, 故事还在继续, 未完待续, 仿佛一切都]
+
+# ---------------- 反漂移（甜宠：虐心化/强制化/工具人化/油腻化）----------------
+anti_drift:
+  persona_signals:
+    - {id: melodrama_drift, desc: 甜宠转虐——误会/失忆/绝症套路, pattern: '(?:误会|失忆|绝症|车祸)[^。]{0,10}(?:分手|离开|忘记)', level: high}
+    - {id: forced_love_drift, desc: 甜宠转强制——控制欲/违背意愿, pattern: '(?:不准|必须)(?:她|他)[^。]{0,10}(?:留下|答应|听话)|(?:囚禁|关起来|不准走)', level: high}
+    - {id: tool_character, desc: 主角工具人化——失去主动性, pattern: '(?:她|他)(?:只是|不过是)(?:个)?(?:工具|摆设|附属)', level: mid}
+    - {id: greasy_flirt, desc: 情话油腻化——霸总腔/土味情话堆砌, pattern: '(?:女人|宝贝)[^。]{0,10}(?:你成功(?:引起|惹怒)了(?:我|我))|(?:我)(?:要)你[^。]{0,8}(?:好看|付出代价)', level: mid}
+    - {id: love_triangle, desc: 狗血三角——男二女二强行搅局, pattern: '(?:男二|女二|前任)(?:突然|又)(?:出现|回来)[^。]{0,12}(?:抢|夺|陷害)', level: mid}
+    - {id: flat_emotion, desc: 甜度扁平——只有腻没有心动层次, pattern: '(?:甜|宠)得(?:发腻|齁|掉牙)', level: mid}
+  callbacks:
+    - type: "类型1 · 强制爱"
+      keywords: [强制爱, 强迫, 下药, 控制欲, 霸总强制]
+      symptom: 亲密行为违背一方意愿，甜宠契约破裂
+      callback: 把亲密拉回双向自愿——心动靠眼神/细节/克制的靠近，不靠强迫与药物；对方说不时必须停。
+    - type: "类型2 · BE/错失结局"
+      keywords: [BE, 结局, 错过, 孤独终老, 相忘江湖]
+      symptom: 结局走向分离/开放式，读者拿不到确定的幸福
+      callback: 给明确 HE——误会必解开、分离必重逢；甜宠的承诺就是确定与圆满，不留遗憾。
+    - type: "类型3 · 虐心狗血"
+      keywords: [虐心, 狗血, 误会, 失忆, 绝症, 恶毒女配]
+      symptom: 靠误会/失忆/绝症制造虐点，破坏轻松底色
+      callback: 把虐点换成甜虐有度的小波折——误会当场说清，风波靠沟通化解，甜度始终托底。
+    - type: "类型4 · 工具人化"
+      keywords: [工具人, 背景板, 没主动性, 恋爱脑]
+      symptom: 主角沦为推进剧情的摆设，失去自我
+      callback: 给主角自己的事业/目标/底线——甜宠是两个人并肩，不是一个围着另一个转。
+    - type: "类型5 · 情话油腻"
+      keywords: [油腻, 土味情话, 霸总腔, 尬撩]
+      symptom: 情话堆砌成霸总腔/土味，读者尴尬
+      callback: 情话回到人物性格与具体细节——记住对方随口说的小事，比一百句「你成功引起我的注意」更心动。
+    - type: "类型6 · AI 味堆积"
+      keywords: [抽象情绪, ai味, AI味, 抽象, 总结升华]
+      symptom: 连续多章出现抽象情绪
+      callback: 用「对照样本」重写该章，强制具体动作/细节/对话节奏/个体反应。
+
+# ---------------- 单章内部自洽（确定性弱信号，只报 suspect，不判 fatal）----------------
+self_consistency:
+  enabled: true
+  time_anchor:
+    patterns: ['第[0-9一二三四五六七八九十百]+天', '第[0-9一二三四五六七八九十百]+章', '[0-9一二三四五六七八九十]{1,2}月[0-9一二三四五六七八九十]{1,3}[日号]', '[0-9一二三四五六七八九十]{1,2}[:：][0-9]{2}']
+    unordered_words: [突然想起, 回到, 回忆, 倒叙, 与此同时, 前一天, 三天前, 上个月]
+    max_backward_jumps: 1
+  numeric_conflict:
+    unit_pattern: '([0-9一二三四五六七八九十百千万两]+\.?[0-9]?)\s*(块|元|毛|斤|岁|天|年|次|个|只|条|人)'
+    contradiction_words: [但, 却, 然而, 反而, 其实, 结果]
+    window_chars: 60
+  entity_alias:
+    patterns: ['(?:老|小)[一-龥]{1,2}']
+    min_occurrences: 2
+
+# ---------------- 节奏信号（甜宠：心动密、撒糖稳）----------------
+pacing_signals:
+  enabled: true
+  # 通用基准词（doctor 判据样本依赖）+ 甜宠专属词叠加
+  payoff_words: [成交, 拿下, 签下, 赚, 到手, 反杀, 打脸, 突破, 升级, 通过, 批准, 翻身, 回本, 兑现, 赢, 胜, 成功, 心动, 告白, 牵手, 拥抱, 亲吻, 复合, 和好, 见家长, 求婚, 领证]
+  conflict_words: [冲突, 争吵, 对峙, 威胁, 逼迫, 拒绝, 反击, 竞争, 质疑, 挑衅, 危机, 危险, 失败, 损失, 亏, 误会, 吃醋, 冷战, 情敌, 闹别扭, 前任]
+  hook_words: [没想到, 却不知, 谁料, 殊不知, 竟然, 居然, 突然, 究竟, 原来, 直到, 才发现, 这时, 下一步, 等着, 果然, 且看, 不出所料, 反手, 谁能想到, 下一秒]
+  payoff_per_2000_warn: 0.6
+  conflict_per_1000_warn: 0.6
+  hook_per_1000_warn: 0.6
+
+# ---------------- 定位决策卡枚举（甜宠版）----------------
+positioning_enums:
+  爽点类型: [双向心动, 先婚后爱, 破镜重圆, 追妻火葬场, 甜虐有度]
+  反派类型: [恶毒女配, 白莲男二, 势利家长, 前任搅局, 误会本身]
+  情感契约: [一生一世一双人, 双向奔赴, 霸道独家宠, 暖男治愈]
+
+# ---------------- 字数分层区间（甜宠：轻快撒糖，字数偏小）----------------
+# 必须保留「通用」键：init_project 的 tone 回退默认值
+word_bands:
+  通用: {静场: [1800, 2800], 常规: [2600, 3600], 反击: [3000, 4200], 高潮: [3800, 5600], 极短: [1000, 1800]}
+  甜暖: {静场: [1600, 2400], 常规: [2200, 3200], 反击: [2600, 3600], 高潮: [3400, 4800], 极短: [900, 1500]}
+  撒糖: {静场: [1400, 2200], 常规: [2000, 3000], 反击: [2400, 3400], 高潮: [3200, 4600], 极短: [800, 1400]}
+
+# ---------------- 发布闸门评分卡锚点（甜宠权重）----------------
+rubric:
+  dimensions:
+    - {id: romance, name: 情感甜度与双向, weight: 0.30, max: 30}
+    - {id: character, name: 人物魅力, weight: 0.25, max: 25}
+    - {id: structure, name: 关系推进结构, weight: 0.25, max: 25}
+    - {id: writing, name: 言情语域与分寸, weight: 0.20, max: 20}
+  grades: {A: 满分（无问题）, B: 轻微扣（1-2 处小问题）, C: 明显扣（多处/反复）, D: 严重扣（致命伤）}
+  score_map:
+    romance: {A: 30, B: 24, C: 15, D: 0}
+    character: {A: 25, B: 20, C: 12, D: 0}
+    structure: {A: 25, B: 20, C: 12, D: 0}
+    writing: {A: 20, B: 16, C: 10, D: 0}
+  verdict: {pass: 80, revise: 70, fatal_overrides: true}
+  compliance_items:
+    - 无强制爱/违背意愿的亲密行为
+    - 无 BE/开放式/错失结局（必须明确 HE）
+    - 无虐心狗血套路（误会当场说清，甜度托底）
+    - 主角非工具人，双向自愿且各有自我
+    - 无露骨/擦边亲密描写（写意化）
+    - 无美化控制欲/PUA/拜金拜权
+    - 无暴力虐杀细节（写意化处理）
+    - 情绪底色甜暖稳定（不塌陷成虐文）
+
+# ---------------- 爽点密度 / 事件库轮换（甜宠版）----------------
+cool_points:
+  - 每章 ≥1 个心动/撒糖点落地
+  - 每 3 章 ≥1 次关系推进（牵手/告白/见家长）
+  - 每卷 3-5 个名场面（告白/求婚/破镜重圆/吃醋反杀）
+  - 每 10 章 1 个中转盘；每卷末 1 个大糖
+event_rotation:
+  - 四类事件库：A 甜蜜日常 / B 小波折 / C 关系升级 / D 独立线（事业/自我），各备 10 个
+  - 不连续两章用同一类
+  - A 后必跟 B 或 C（甜→小波折/升级，防纯粹发糖疲劳）
+  - D 每 6-9 章一次（主角要有自我，不做恋爱脑）
+  - C 用于「关系质变」，须前文埋过心动伏笔
+
+# ---------------- 开新书 7 步 SOP（甜宠版）----------------
+sop:
+  steps:
+    - {step: 1, name: 定位（1 天）, tool: init_project, checks: [甜宠模式已定, 情感契约已定, 差异化一句话说得清, HE 已确定]}
+    - {step: 2, name: 找对立面（0.5 天）★ 关键, tool: save_card(tone), checks: [每个维度都能说出我不是什么, 对照表覆盖强制爱/BE/虐心/工具人边界]}
+    - {step: 3, name: 建锁定层（1-2 天）, tool: save_card, checks: [双向自愿契约清晰, 主角各有事业/底线, 反派阻力真实, 甜虐比例已定]}
+    - {step: 4, name: 建结构层（2-3 天）, tool: add_foreshadow/save_outline, checks: [关系推进节点已定, 每章有心动或撒糖点, 伏笔编号含埋设/回收章, 事件库 40+]}
+    - {step: 5, name: 建执行层（1 天）, tool: prompt build_system_prompt, checks: [prompt 含禁强制爱禁 BE, 节奏分层区间非死数, 甜宠专属词表, 亲密尺度已定]}
+    - {step: 6, name: 建质检层（0.5 天）, tool: review_chapter/release_gate, checks: [评审分层, 有防虐心/强制爱检测项, HE 已核, 漂移回调方案具体]}
+    - {step: 7, name: 小批量试产→评审→量产, tool: 试产10章+review_chapter, checks: [前 10 章已试产, 全审已跑, 问题已回调到规则层, 重跑确认稳定]}
+
+# ---------------- 事实抽取 / 评审回流（P1 闭环）----------------
+fact_extract:
+  enabled: true
+  unit_pattern: '([0-9一二三四五六七八九十百千万两]+\.?[0-9]?)\s*(块|元|毛|斤|岁|天|年|次|个|只|条|人)'
+  label_chars: 8
+  min_occurrences: 2
+  max_anchors: 40
+chapter_brief:
+  enabled: true
+  max_avoid: 8
+  max_foreshadow: 8
+  overdue_chapters: 10

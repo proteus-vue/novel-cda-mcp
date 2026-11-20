@@ -193,30 +193,38 @@ pnpm test                           # 单测（vitest 11 项）+ 端到端冒烟
 
 ## 多风格预设（preset）
 
-`CDA_CONFIG_DIR` 不只是"语言包"，它是**整包风格切换**——同一套 MCP 引擎，换一份配置就是另一种创作约束。仓库内置三个可运行的样例，且刻意做成强对比：
+`CDA_CONFIG_DIR` 不只是"语言包"，它是**整包风格切换**——同一套 MCP 引擎，换一份配置就是另一种创作约束。仓库内置六个可运行的样例，且刻意做成强对比：
 
 | preset | 说明 | 适用 |
 |---|---|---|
 | [古言权谋](./presets/guyan-quanmou/README.md) | 禁现代词/阿拉伯数字，半文半白、权谋有代价 | 古代言情、宫廷、权谋 |
 | [硬科幻](./presets/hard-scifi/README.md) | 鼓励精确数据，禁玄学/伪科学/技术万能，重科学自洽 | 硬科幻、太空歌剧、近未来 |
 | [轻喜剧](./presets/qing-xiju/README.md) | 禁苦情虐心/强行煽情，笑点靠反差、吐槽对事不对人 | 轻喜剧、日常搞笑、轻松向 |
+| [悬疑推理](./presets/xuanyi-tuili/README.md) | 禁破案跳步/超自然谜底，线索公平、反派有脑、推理落地 | 悬疑、侦探、密室、刑侦 |
+| [历史正剧](./presets/lishi-zhengju/README.md) | 禁网络流行语/系统流，史实为骨、克制为美、人物为魂 | 历史正剧、架空历史、王朝群像 |
+| [甜宠言情](./presets/tianchong/README.md) | 禁强制爱/BE 结局，双向自愿、甜度稳定、人物有自我 | 甜宠、现代言情、先婚后爱 |
 
 ```bash
-export CDA_CONFIG_DIR=/绝对路径/novel-cda-mcp/presets/qing-xiju   # 或 guyan-quanmou / hard-scifi
-node dist/index.js --doctor --json   # 显示 大禹·轻喜剧 / 0.2.0-xiju.1 / healthy=true
+export CDA_CONFIG_DIR=/绝对路径/novel-cda-mcp/presets/qing-xiju   # 或 guyan-quanmou / hard-scifi / xuanyi-tuili / lishi-zhengju / tianchong
+node dist/index.js --doctor --json   # 显示所选风格名 / 版本 / healthy=true
 node dist/index.js                   # stdio 挂载，评审自动按所选风格规则
 ```
 
-实测四包对同一批文本的**交叉反向差异**（证明是真·整包行为切换，不是换皮）：
+实测七包对同一批文本的**交叉反向差异**（证明是真·整包行为切换，不是换皮）：
 
-| 文本 | 默认包 | 古言包 | 硬科幻包 | 轻喜剧包 |
-|---|---|---|---|---|
-| 玄学词（真气/金丹/筑基） | 通过 | 通过 | fatal（`xianxia_leak`） | 通过 |
-| 精确数据（137.5米/0.3%） | 通过 | 数字泄漏 | 通过 | 通过 |
-| 现代词（手机/微信/186） | 通过 | fatal（`modern_word_leak`） | 通过 | 通过 |
-| 苦情（吐血/生离死别） | 通过 | 通过 | 通过 | fatal（`melodrama_leak`） |
+| 文本 | 默认包 | 古言 | 硬科幻 | 轻喜剧 | 悬疑 | 正剧 | 甜宠 |
+|---|---|---|---|---|---|---|---|
+| 玄学词（真气/金丹/筑基） | 通过 | 通过 | fatal | 通过 | 通过 | 通过 | 通过 |
+| 精确数据（137.5米/0.3%） | 通过 | fatal | 通过 | 通过 | 通过 | 通过 | 通过 |
+| 现代词（手机/微信/186） | 通过 | fatal | 通过 | 通过 | 通过 | 通过 | 通过 |
+| 苦情（吐血/生离死别） | 通过 | 通过 | 通过 | fatal | 通过 | 通过 | 通过 |
+| 破案跳步（轻而易举破解） | 通过 | 通过 | 通过 | 通过 | fatal | 通过 | 通过 |
+| 网络梗（家人们/破防/yyds） | 通过 | fatal | 通过 | 合法鼓励 | 通过 | fatal | 通过 |
+| 系统流（叮，恭喜宿主） | 通过 | 通过 | 通过 | 通过 | 通过 | fatal | 通过 |
+| 强制爱（下药/强行占有） | 通过 | 通过 | 通过 | 通过 | 通过 | 通过 | fatal |
+| BE 结局（孤独终老） | 通过 | 通过 | 通过 | 通过 | 通过 | 通过 | fatal |
 
-已固化为 17 个自动化断言（古言 5 + 硬科幻 6 + 轻喜剧 6），`pnpm test` 28 单元 + smoke 全绿。
+已固化为 36 个自动化断言（古言 5 + 硬科幻 6 + 轻喜剧 6 + 悬疑 6 + 正剧 6 + 甜宠 7），`pnpm test` 47 单元 + smoke 全绿。
 
 > **多风格的方法论**：重活儿不在"采集大量作品训练模型"（大禹无权重可训练），而在"把风格翻译成可计算判据 + 用小样本验收规则"——可计算的进 `rules.yaml`，扫不出的叙事声音进 `prompts.md` 交 L3 语义判。新增风格见 [preset README](./presets/guyan-quanmou/README.md#如何新增一个风格-preset)。
 

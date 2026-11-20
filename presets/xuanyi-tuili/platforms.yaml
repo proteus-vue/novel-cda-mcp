@@ -1,0 +1,44 @@
+# 大禹 · 风格预设：悬疑推理 —— 平台档案
+# 数据来源：公开投稿/签约资料整理，以各平台官方最新公告为准
+# 被 config.ts 的 getPlatform() 读取；未知平台回退通用档并标 _fallback
+version: "0.2.0-tuili.1"
+defaults:
+  must_avoid: [涉政影射, 详细可模仿作案手法, 美化连环犯罪, 鬼神当万能谜底, 涉黄低俗, 三观严重偏离, 警方无能到底]
+platforms:
+  qidian:
+    name: 起点中文网·悬疑/侦探
+    unsigned_traffic: 有
+    exclusive: 分成/买断可选
+    genres: [悬疑推理, 侦探, 密室, 刑侦]
+    patience: 较高
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 1000, golden_finger: 2500, payoff: 4000}
+  zhihu:
+    name: 知乎盐选·悬疑
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [悬疑推理, 本格, 社会派, 反转]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [3000, 5000]
+    golden_window: {conflict: 800, golden_finger: 2200, payoff: 3800}
+  fanqie:
+    name: 番茄小说·悬疑推理
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [悬疑, 推理, 侦探, 民间奇案]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 800, golden_finger: 2000, payoff: 3500}
+  custom:
+    name: 自定义平台（悬疑推理通用档）
+    unsigned_traffic: 未提供公开标准，按悬疑通用标准评审
+    exclusive: 签约前需自行确认
+    genres: []
+    patience: 未知
+    title_min_chars: 5
+    daily_words: [4000, 7000]
+    golden_window: {conflict: 1000, golden_finger: 2500, payoff: 4000}
+    _fallback_template: true

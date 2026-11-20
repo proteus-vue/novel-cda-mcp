@@ -1,0 +1,44 @@
+# 大禹 · 风格预设：历史正剧 —— 平台档案
+# 数据来源：公开投稿/签约资料整理，以各平台官方最新公告为准
+# 被 config.ts 的 getPlatform() 读取；未知平台回退通用档并标 _fallback
+version: "0.2.0-zhengju.1"
+defaults:
+  must_avoid: [网络流行语出戏, 系统流弹窗, 时代错位, 史实硬伤, 民族宗教丑化, 美化侵略, 涉黄低俗]
+platforms:
+  qidian:
+    name: 起点中文网·历史/正剧
+    unsigned_traffic: 有
+    exclusive: 分成/买断可选
+    genres: [历史正剧, 架空历史, 历史群像, 王朝兴衰]
+    patience: 较高
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 1400, golden_finger: 3500, payoff: 5500}
+  zhihu:
+    name: 知乎盐选·历史
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [历史正剧, 历史细节, 人物传记, 史实向]
+    patience: 较高
+    title_min_chars: 5
+    daily_words: [3000, 5000]
+    golden_window: {conflict: 1200, golden_finger: 3000, payoff: 5000}
+  fanqie:
+    name: 番茄小说·历史
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [历史, 架空历史, 王朝, 历史人物]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 1000, golden_finger: 2500, payoff: 4500}
+  custom:
+    name: 自定义平台（历史正剧通用档）
+    unsigned_traffic: 未提供公开标准，按正剧通用标准评审
+    exclusive: 签约前需自行确认
+    genres: []
+    patience: 未知
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 1400, golden_finger: 3500, payoff: 5500}
+    _fallback_template: true

@@ -1,0 +1,44 @@
+# 大禹 · 风格预设：甜宠言情 —— 平台档案
+# 数据来源：公开投稿/签约资料整理，以各平台官方最新公告为准
+# 被 config.ts 的 getPlatform() 读取；未知平台回退通用档并标 _fallback
+version: "0.2.0-tianchong.1"
+defaults:
+  must_avoid: [强制爱违背意愿, BE或开放式结局, 虐心狗血套路, 露骨擦边描写, 美化控制欲PUA, 拜金拜权, 三观严重偏离]
+platforms:
+  qidian:
+    name: 起点女生网·甜宠/言情
+    unsigned_traffic: 有
+    exclusive: 分成/买断可选
+    genres: [甜宠, 现代言情, 霸总, 暖宠]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 6000]
+    golden_window: {conflict: 600, golden_finger: 1500, payoff: 2800}
+  fanqie:
+    name: 番茄小说·甜宠言情
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [甜宠, 言情, 先婚后爱, 破镜重圆]
+    patience: 中
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 500, golden_finger: 1200, payoff: 2500}
+  jjwxc:
+    name: 晋江文学城·言情
+    unsigned_traffic: 有
+    exclusive: 签约制
+    genres: [甜宠, 言情, 现言, 暖心]
+    patience: 较高
+    title_min_chars: 5
+    daily_words: [3000, 5000]
+    golden_window: {conflict: 800, golden_finger: 2000, payoff: 3500}
+  custom:
+    name: 自定义平台（甜宠通用档）
+    unsigned_traffic: 未提供公开标准，按甜宠通用标准评审
+    exclusive: 签约前需自行确认
+    genres: []
+    patience: 未知
+    title_min_chars: 5
+    daily_words: [4000, 8000]
+    golden_window: {conflict: 600, golden_finger: 1500, payoff: 2800}
+    _fallback_template: true
